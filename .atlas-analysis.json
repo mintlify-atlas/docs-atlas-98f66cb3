@@ -1,0 +1,67 @@
+{
+  "projectType": "saas",
+  "projectName": "Go Payment Dashboard",
+  "projectDescription": "A full-stack payment dashboard built with Go (Chi router) and React (Vite/Tailwind), featuring a REST API, PostgreSQL database, and Docker-based local development.",
+  "theme": "mint",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Core Features",
+            "pages": ["features/payments", "features/frontend"]
+          },
+          {
+            "group": "Development",
+            "pages": ["development/local-setup", "development/environment-variables", "development/database", "development/testing"]
+          },
+          {
+            "group": "Deployment",
+            "pages": ["deployment/docker", "deployment/fly-io", "deployment/ci-cd"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["api-reference/overview"]
+          },
+          {
+            "group": "Payments",
+            "pages": ["api-reference/payments/list", "api-reference/payments/get", "api-reference/payments/create"]
+          },
+          {
+            "group": "Health",
+            "pages": ["api-reference/health/app", "api-reference/health/db"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Go REST API with Chi router serving payment CRUD endpoints",
+    "React 19 frontend with Tailwind CSS, shadcn/ui components, and Recharts visualizations",
+    "PostgreSQL database with sqlc-generated type-safe queries",
+    "Docker Compose setup with live reloading via Air for local development",
+    "Fly.io deployment configuration for both backend and frontend",
+    "GitHub Actions CI/CD with automated tests and semantic releases",
+    "Drag-and-drop UI with dnd-kit and TanStack Query for data fetching"
+  ],
+  "publicApiSurface": [
+    "GET /payments — List all payments",
+    "POST /payments — Create a new payment",
+    "GET /payments/{id} — Get a payment by ID",
+    "GET /health — Application health check",
+    "GET /health/db — Database health check"
+  ]
+}
