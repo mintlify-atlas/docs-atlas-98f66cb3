@@ -1,0 +1,45 @@
+---
+title: 'Database health'
+description: 'Check the health and connection pool statistics of the database.'
+api: 'GET https://go-dashboard.fly.dev/health/db'
+---
+
+Returns health statistics from the database connection pool. Use this endpoint for readiness probes to verify the application can reach the database before routing traffic.
+
+<Info>
+  The response shape is determined by the database driver's health method and includes connection pool metrics such as open connections, idle connections, and wait counts.
+</Info>
+
+## Response
+
+### 200 — success
+
+Returns a map of database health statistics. The exact fields depend on the underlying database driver.
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url https://go-dashboard.fly.dev/health/db \
+  --header 'Accept: application/json'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "database_status": "up",
+  "open_connections": 5,
+  "in_use": 1,
+  "idle": 4,
+  "wait_count": 0,
+  "wait_duration": "0s",
+  "max_idle_closed": 0,
+  "max_idle_time_closed": 0,
+  "max_lifetime_closed": 0
+}
+```
+
+</ResponseExample>

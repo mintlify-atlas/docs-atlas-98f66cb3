@@ -1,0 +1,189 @@
+---
+title: 'Fly.io'
+description: 'Deploy the Go Payment Dashboard backend to Fly.io and manage secrets, scaling, and monitoring.'
+keywords: ['fly.io', 'flyctl', 'deployment', 'production', 'fly deploy', 'fly secrets']
+---
+
+The Go backend is deployed to [Fly.io](https://fly.io) and is publicly accessible at [https://go-dashboard.fly.dev](https://go-dashboard.fly.dev). Deployments are configured with `fly.toml` and automated through GitHub Actions.
+
+## Prerequisites
+
+<Columns cols={2}>
+  <Card title="flyctl" icon="terminal" href="https://fly.io/docs/hands-on/install-flyctl/">
+    The Fly.io CLI (`flyctl`) must be installed on your machine.
+  </Card>
+  <Card title="Fly.io account" icon="user" href="https://fly.io/app/sign-up">
+    You need a Fly.io account to deploy and manage apps.
+  </Card>
+</Columns>
+
+## Configuration files
+
+The project includes two Fly.io configuration files:
+
+| File | Purpose |
+|------|---------|
+| `fly.toml` | Primary configuration for the Go backend app |
+| `fly.backend.toml` | Separate backend deployment configuration |
+
+These files define the app name, region, HTTP service settings, and health checks used by `fly deploy`.
+
+## Deploying manually
+
+<Steps>
+  <Step title="Authenticate with Fly.io">
+    ```bash
+    fly auth login
+    ```
+
+    This opens a browser window to complete authentication.
+  </Step>
+
+  <Step title="Set required secrets">
+    Before the first deployment, set all required environment variables as Fly.io secrets. These correspond to the same variables used in your local `.env` file:
+
+    ```bash
+    fly secrets set \
+      APP_ENV=production \
+      PORT=8080 \
+      DB_HOST=<your-db-host> \
+      DB_PORT=5432 \
+      DB_DATABASE=<your-db-name> \
+      DB_USERNAME=<your-db-user> \
+      DB_PASSWORD=<your-db-password> \
+      DB_SCHEMA=public \
+      DB_SSLMODE=require \
+      FRONTEND_ORIGIN=<your-frontend-url>
+    ```
+
+    <Warning>
+      Set `DB_SSLMODE=require` or `DB_SSLMODE=verify-full` in production. Never use `disable`.
+    </Warning>
+  </Step>
+
+  <Step title="Deploy the app">
+    ```bash
+    fly deploy
+    ```
+
+    Fly.io builds the Docker image using the `Dockerfile` in the repository root, pushes it to the Fly.io registry, and starts the new release.
+  </Step>
+
+  <Step title="Verify the deployment">
+    ```bash
+    fly status
+    ```
+
+    Once the deployment is healthy, the app is accessible at your Fly.io app URL (e.g. `https://go-dashboard.fly.dev`).
+
+    Check the health endpoint:
+
+    ```bash
+    curl https://go-dashboard.fly.dev/health
+    # {"message":"App is running"}
+    ```
+  </Step>
+</Steps>
+
+## Automated deployment with GitHub Actions
+
+The `.github/workflows/fly-deploy.yml` workflow automatically deploys the backend to Fly.io on every push to `main`.
+
+The workflow:
+1. Checks out the repository.
+2. Authenticates with Fly.io using the `FLY_API_TOKEN` GitHub secret.
+3. Runs `fly deploy` to build and release the new image.
+
+### Required GitHub secret
+
+Add the following secret to your GitHub repository before the workflow can run:
+
+| Secret | How to get it |
+|--------|---------------|
+| `FLY_API_TOKEN` | Run `fly auth token` locally, then add the output as a repository secret in **Settings → Secrets and variables → Actions** |
+
+<Note>
+  The `fly-deploy.yml` workflow triggers on push to `main`. Any merge into `main` will trigger a production deployment.
+</Note>
+
+## Managing secrets
+
+Use `fly secrets` to view and update runtime configuration without redeploying from scratch.
+
+<CodeGroup>
+
+```bash Set a secret
+fly secrets set KEY=value
+```
+
+```bash Set multiple secrets at once
+fly secrets set DB_PASSWORD=newpassword DB_HOST=newhost
+```
+
+```bash List current secrets (names only, values are hidden)
+fly secrets list
+```
+
+```bash Remove a secret
+fly secrets unset KEY
+```
+
+</CodeGroup>
+
+<Note>
+  Setting a secret triggers a rolling restart of the app so the new value takes effect immediately. No redeployment is needed.
+</Note>
+
+## Database
+
+The Go backend requires a PostgreSQL database. You must provision this separately before deploying.
+
+<AccordionGroup>
+  <Accordion title="Fly Postgres (recommended)">
+    Fly.io provides a managed Postgres service that runs in your organization:
+
+    ```bash
+    fly postgres create
+    ```
+
+    After creation, attach it to your app:
+
+    ```bash
+    fly postgres attach <postgres-app-name>
+    ```
+
+    Attaching automatically sets the `DATABASE_URL` secret on your app. You may need to parse the URL into individual `DB_*` variables depending on how the Go application reads its configuration.
+  </Accordion>
+
+  <Accordion title="External database">
+    You can also use an external PostgreSQL provider (e.g. Supabase, Neon, Railway). Set the `DB_*` secrets to point to the external host and ensure `DB_SSLMODE` is set to `require`.
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring
+
+<CodeGroup>
+
+```bash Stream live logs
+fly logs
+```
+
+```bash Check app status and instance health
+fly status
+```
+
+```bash Open a remote shell
+fly ssh console
+```
+
+```bash View recent deployments
+fly releases
+```
+
+</CodeGroup>
+
+## Frontend deployment
+
+The frontend (React/Vite) is deployed as a separate Fly.io app. The backend's `FRONTEND_ORIGIN` secret must be set to the frontend's Fly.io URL to allow cross-origin requests.
+
+See the [Environment variables](/development/environment-variables) reference for a full description of `FRONTEND_ORIGIN`.

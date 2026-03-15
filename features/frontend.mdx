@@ -1,0 +1,185 @@
+---
+title: 'Frontend'
+description: 'React 19 dashboard built with Vite, Tailwind v4, and shadcn/ui for managing payment records.'
+keywords: ['frontend', 'React', 'Vite', 'Tailwind', 'TanStack Query', 'dashboard']
+---
+
+The frontend is a single-page application (SPA) that provides a visual interface for the payment dashboard. It communicates with the Go backend over HTTP and renders payment data in interactive tables and charts.
+
+## Tech stack
+
+<Columns cols={2}>
+  <Card title="React 19 + Vite" icon="react">
+    UI library and build tooling. Vite serves the app in development with HMR and bundles it for production.
+  </Card>
+  <Card title="Tailwind CSS v4" icon="paintbrush">
+    Utility-first CSS framework. v4 uses a CSS-native configuration approach instead of `tailwind.config.js`.
+  </Card>
+  <Card title="shadcn/ui" icon="layout-panel-left">
+    Accessible component library built on Radix UI primitives, styled with Tailwind.
+  </Card>
+  <Card title="TanStack Query v5" icon="database">
+    Server-state management. Handles data fetching, caching, and background refetching for the payments API.
+  </Card>
+  <Card title="TanStack Table v8" icon="table">
+    Headless table engine powering the sortable, reorderable payments table.
+  </Card>
+  <Card title="dnd-kit" icon="hand">
+    Drag-and-drop toolkit (`@dnd-kit/core` + `@dnd-kit/sortable`) used for reordering table columns.
+  </Card>
+  <Card title="Recharts" icon="chart-line">
+    Composable charting library used to visualize payment data on the dashboard.
+  </Card>
+  <Card title="Zustand v5" icon="box">
+    Lightweight client-state management for UI state not tied to server data.
+  </Card>
+</Columns>
+
+<Note>
+  The full dependency list is in `package.json`. Routing is handled by React Router v7.
+</Note>
+
+## Running the frontend locally
+
+<Steps>
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+  <Step title="Configure the API URL">
+    Create a `.env` file in the frontend root and set the backend address:
+
+    ```bash
+    VITE_API_URL=http://localhost:8080
+    ```
+
+    The `VITE_` prefix makes the variable available to the browser bundle at build time.
+  </Step>
+  <Step title="Start the dev server">
+    ```bash
+    npm run dev
+    ```
+
+    Vite starts a development server at **`http://localhost:5173`** with hot module replacement enabled.
+  </Step>
+</Steps>
+
+<Tip>
+  Make sure the Go backend is running before starting the frontend, otherwise API requests will fail. The backend listens on port `8080` by default.
+</Tip>
+
+## Dashboard UI features
+
+### Payments table
+
+The payments table is the central UI element. It renders all payment records fetched from `GET /payments` and supports the following interactions:
+
+- **Drag-and-drop column reordering** — grab any column header and drag it to a new position. Column order is tracked in Zustand state so it persists across re-renders within the session.
+- **Sortable columns** — click a column header to sort ascending or descending by that field.
+- **All payment fields displayed** — `id`, `sender`, `recipient`, `amount`, `createdAt`, and `updatedAt` are all available as columns.
+
+<Note>
+  Column drag-and-drop is powered by `@dnd-kit/sortable`. The table logic itself is managed by TanStack Table.
+</Note>
+
+### Payment creation form
+
+A form in the dashboard allows you to create payments without leaving the UI:
+
+- Fields: **Sender**, **Recipient**, **Amount**.
+- On submit, a `POST /payments` request is sent via axios.
+- TanStack Query's `useMutation` handles the request lifecycle and automatically invalidates the payments list query on success, triggering a background refetch.
+
+### Charts
+
+The dashboard includes Recharts-powered visualizations for payment data, such as payment volume over time and per-sender breakdowns. Charts consume the same data returned by the payments API.
+
+## Data fetching with TanStack Query
+
+All server state is managed through TanStack Query. Axios is the underlying HTTP client, configured to use the `VITE_API_URL` environment variable as the base URL.
+
+```typescript
+// Example: fetching the payments list
+import { useQuery } from '@tanstack/react-query'
+import axios from 'axios'
+
+const apiUrl = import.meta.env.VITE_API_URL
+
+export function usePayments() {
+  return useQuery({
+    queryKey: ['payments'],
+    queryFn: async () => {
+      const { data } = await axios.get(`${apiUrl}/payments`)
+      return data
+    },
+  })
+}
+```
+
+```typescript
+// Example: creating a payment
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import axios from 'axios'
+
+const apiUrl = import.meta.env.VITE_API_URL
+
+export function useCreatePayment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: { sender: string; recipient: string; amount: number }) =>
+      axios.post(`${apiUrl}/payments`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+    },
+  })
+}
+```
+
+<Tip>
+  TanStack Query caches the payments list under the `['payments']` query key. Any component can subscribe to this cache without triggering additional network requests.
+</Tip>
+
+## State management with Zustand
+
+Zustand handles client-only UI state — state that does not need to be fetched from or synchronized with the server. Current uses include:
+
+- **Column order** for the payments table (tracks the current drag-and-drop arrangement).
+- **UI preferences** such as panel visibility or active dashboard view.
+
+```typescript
+// Example: column order store
+import { create } from 'zustand'
+
+interface ColumnOrderState {
+  columnOrder: string[]
+  setColumnOrder: (order: string[]) => void
+}
+
+export const useColumnOrderStore = create<ColumnOrderState>((set) => ({
+  columnOrder: ['id', 'sender', 'recipient', 'amount', 'createdAt', 'updatedAt'],
+  setColumnOrder: (order) => set({ columnOrder: order }),
+}))
+```
+
+## Backend communication
+
+The frontend communicates with the backend exclusively through the base URL defined by the `VITE_API_URL` environment variable.
+
+| Environment | `VITE_API_URL` value |
+|---|---|
+| Local development | `http://localhost:8080` |
+| Production | Your deployed backend URL |
+
+<Warning>
+  Do not commit `.env` files containing production API URLs. Use your deployment platform's environment variable configuration instead.
+</Warning>
+
+All requests follow the REST endpoints defined by the Go backend:
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/payments` | Fetch all payments |
+| `POST` | `/payments` | Create a new payment |
+| `GET` | `/payments/{id}` | Fetch a single payment by ID |

@@ -1,0 +1,206 @@
+---
+title: 'Payments'
+description: 'Create, list, and retrieve payment records between senders and recipients.'
+keywords: ['payments', 'create payment', 'list payments', 'payment API']
+---
+
+The payments feature lets you record transfers of funds between a sender and a recipient. Each payment captures who sent money, who received it, how much was transferred, and when the record was created or last updated.
+
+## Payment data model
+
+<ResponseField name="id" type="integer" required>
+  Unique numeric identifier for the payment. Auto-assigned on creation.
+</ResponseField>
+
+<ResponseField name="sender" type="string" required>
+  Name or identifier of the party sending funds. Cannot be empty.
+</ResponseField>
+
+<ResponseField name="recipient" type="string" required>
+  Name or identifier of the party receiving funds. Cannot be empty.
+</ResponseField>
+
+<ResponseField name="amount" type="number" required>
+  Transfer amount as a decimal value. Must be greater than `0`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string (ISO 8601)" required>
+  Timestamp when the payment record was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string (ISO 8601)" required>
+  Timestamp when the payment record was last modified.
+</ResponseField>
+
+## Validation rules
+
+<Warning>
+  All three fields are required when creating a payment. Requests that violate these rules will be rejected.
+</Warning>
+
+- **`sender`** — must be a non-empty string.
+- **`recipient`** — must be a non-empty string.
+- **`amount`** — must be a number strictly greater than `0`. Zero and negative values are not accepted.
+
+## List payments
+
+Returns all payment records ordered by creation date, newest first.
+
+<Tabs>
+  <Tab title="UI">
+    Open the dashboard and navigate to the **Payments** section. The payments table displays all records with sender, recipient, amount, and creation date columns. You can drag and drop column headers to reorder them.
+  </Tab>
+  <Tab title="API">
+    ```bash
+    curl --request GET \
+      --url http://localhost:8080/payments
+    ```
+
+    **Response**
+
+    ```json
+    [
+      {
+        "id": 2,
+        "sender": "alice",
+        "recipient": "bob",
+        "amount": 250.00,
+        "createdAt": "2026-03-15T10:30:00Z",
+        "updatedAt": "2026-03-15T10:30:00Z"
+      },
+      {
+        "id": 1,
+        "sender": "carol",
+        "recipient": "dave",
+        "amount": 75.50,
+        "createdAt": "2026-03-14T09:00:00Z",
+        "updatedAt": "2026-03-14T09:00:00Z"
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+### API details
+
+**`GET /payments`**
+
+No request parameters. Returns a `PaymentListResponse` — an array of payment objects.
+
+## Create a payment
+
+<Tabs>
+  <Tab title="UI">
+    <Steps>
+      <Step title="Open the creation form">
+        Click the **New Payment** button in the dashboard toolbar.
+      </Step>
+      <Step title="Fill in the fields">
+        Enter a **Sender**, **Recipient**, and **Amount**. All three fields are required.
+      </Step>
+      <Step title="Submit">
+        Click **Create**. The new payment appears at the top of the payments table immediately.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="API">
+    ```bash
+    curl --request POST \
+      --url http://localhost:8080/payments \
+      --header 'Content-Type: application/json' \
+      --data '{
+        "sender": "alice",
+        "recipient": "bob",
+        "amount": 100.00
+      }'
+    ```
+
+    **Response**
+
+    ```json
+    {
+      "id": 3,
+      "sender": "alice",
+      "recipient": "bob",
+      "amount": 100.00,
+      "createdAt": "2026-03-15T12:00:00Z",
+      "updatedAt": "2026-03-15T12:00:00Z"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Request fields
+
+**`POST /payments`**
+
+Request body must be JSON with `Content-Type: application/json`.
+
+<ParamField body="sender" type="string" required>
+  Name or identifier of the sender. Must not be empty.
+</ParamField>
+
+<ParamField body="recipient" type="string" required>
+  Name or identifier of the recipient. Must not be empty.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Transfer amount. Must be greater than `0`.
+</ParamField>
+
+## Look up a payment by ID
+
+Retrieve a single payment record using its numeric ID.
+
+<Tabs>
+  <Tab title="UI">
+    Click any row in the payments table to open the payment detail view. The URL updates to reflect the payment ID.
+  </Tab>
+  <Tab title="API">
+    ```bash
+    curl --request GET \
+      --url http://localhost:8080/payments/1
+    ```
+
+    **Response**
+
+    ```json
+    {
+      "id": 1,
+      "sender": "carol",
+      "recipient": "dave",
+      "amount": 75.50,
+      "createdAt": "2026-03-14T09:00:00Z",
+      "updatedAt": "2026-03-14T09:00:00Z"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### API details
+
+**`GET /payments/{id}`**
+
+<ParamField path="id" type="integer" required>
+  The numeric ID of the payment to retrieve.
+</ParamField>
+
+Returns a single payment object, or a `404` if no payment with that ID exists.
+
+## API summary
+
+<Columns cols={3}>
+  <Card title="List payments" icon="list">
+    `GET /payments` — returns all payments ordered newest first.
+  </Card>
+  <Card title="Create payment" icon="plus">
+    `POST /payments` — accepts `sender`, `recipient`, and `amount`.
+  </Card>
+  <Card title="Get by ID" icon="magnifying-glass">
+    `GET /payments/{id}` — returns a single payment by its numeric ID.
+  </Card>
+</Columns>
+
+<Note>
+  The API returns timestamps in UTC using RFC 3339 format (e.g. `2026-03-15T10:30:00Z`).
+</Note>

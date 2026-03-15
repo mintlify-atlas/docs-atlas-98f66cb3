@@ -1,0 +1,39 @@
+---
+title: 'Application health'
+description: 'Check whether the application process is running.'
+api: 'GET https://go-dashboard.fly.dev/health'
+---
+
+Returns a static confirmation that the application process is running. Use this endpoint for liveness probes and uptime monitoring.
+
+<Info>
+  This endpoint checks only that the application process is alive. It does not verify database connectivity. Use [GET /health/db](/api-reference/health/db) for a readiness probe.
+</Info>
+
+## Response
+
+### 200 — success
+
+<ResponseField name="message" type="string" required>
+  A static string confirming the application is running. Value is always `"App is running"`.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url https://go-dashboard.fly.dev/health \
+  --header 'Accept: application/json'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "message": "App is running"
+}
+```
+
+</ResponseExample>

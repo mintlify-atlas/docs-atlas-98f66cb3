@@ -1,0 +1,139 @@
+---
+title: 'Environment variables'
+description: 'Reference for all environment variables used by the Go Payment Dashboard backend and frontend.'
+keywords: ['environment variables', 'configuration', 'env', '.env', 'dotenv']
+---
+
+All runtime configuration is supplied through environment variables. Copy `.env.example` to `.env` and set each value before starting the stack.
+
+```bash
+cp .env.example .env
+```
+
+<Note>
+  The `.env` file is mounted directly into the `app` container at `/dashboard/.env`. Changes to `.env` require a container restart (`docker compose restart app`) to take effect — Air's file watcher does not monitor `.env`.
+</Note>
+
+## Backend variables
+
+These variables are consumed by the Go application.
+
+### Server
+
+<ParamField path="PORT" type="number" required placeholder="8080">
+  The HTTP port the backend listens on. Docker Compose maps this port from the container to the host, so the API is reachable at `http://localhost:<PORT>`.
+
+  **Example:** `8080`
+</ParamField>
+
+<ParamField path="APP_ENV" type="string" required placeholder="development">
+  The runtime environment name. Used by the application to toggle environment-specific behaviour such as logging verbosity and error detail.
+
+  **Accepted values:** `development`, `production`
+
+  **Example:** `development`
+</ParamField>
+
+### Database
+
+<ParamField path="DB_HOST" type="string" required placeholder="localhost">
+  Hostname or IP address of the PostgreSQL server.
+
+  When running a local database container in the same Docker Compose network, use the service name (e.g. `db`). For an external database, use the actual hostname.
+
+  **Example:** `db` (Docker Compose) or `localhost` (host machine)
+</ParamField>
+
+<ParamField path="DB_PORT" type="number" default="5432" placeholder="5432">
+  PostgreSQL port.
+
+  **Default:** `5432`
+</ParamField>
+
+<ParamField path="DB_DATABASE" type="string" required placeholder="payments_db">
+  The name of the PostgreSQL database the application connects to.
+
+  **Example:** `payments_db`
+</ParamField>
+
+<ParamField path="DB_USERNAME" type="string" required placeholder="postgres">
+  Username used to authenticate with the database.
+
+  **Example:** `postgres`
+</ParamField>
+
+<ParamField path="DB_PASSWORD" type="string" required>
+  Password for the database user. Use a strong, randomly generated value in production.
+
+  <Warning>Never commit your actual `DB_PASSWORD` to version control. The `.env` file should be listed in `.gitignore`.</Warning>
+</ParamField>
+
+<ParamField path="DB_SCHEMA" type="string" default="public" placeholder="public">
+  The PostgreSQL schema the application operates in.
+
+  **Default:** `public`
+</ParamField>
+
+<ParamField path="DB_SSLMODE" type="string" required placeholder="disable">
+  Controls whether the PostgreSQL connection uses TLS.
+
+  | Value | When to use |
+  |-------|-------------|
+  | `disable` | Local development, trusted networks |
+  | `require` | Production — encrypts the connection |
+  | `verify-full` | Production — encrypts and verifies the server certificate |
+
+  **Example:** `disable` (local), `require` (production)
+</ParamField>
+
+### CORS
+
+<ParamField path="FRONTEND_ORIGIN" type="string" required placeholder="http://localhost:5173">
+  The origin the backend allows for cross-origin requests (CORS). Set this to the URL where the frontend is served.
+
+  **Example:** `http://localhost:5173` (local Vite dev server)
+</ParamField>
+
+## Frontend variables
+
+The Vite frontend reads environment variables prefixed with `VITE_`. Create a `.env` file (or `.env.local`) inside the `frontend/` directory.
+
+<ParamField path="VITE_API_URL" type="string" required placeholder="http://localhost:8080">
+  The base URL of the Go backend API. The React application sends all API requests to this URL.
+
+  **Example:** `http://localhost:8080`
+
+  <Tip>
+    In production, set `VITE_API_URL` to your deployed API URL (e.g. `https://api.example.com`) and rebuild the frontend with `npm run build`.
+  </Tip>
+</ParamField>
+
+## Full .env.example
+
+```bash .env.example
+PORT=
+APP_ENV=
+DB_HOST=
+DB_PORT=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+DB_SCHEMA=
+DB_SSLMODE=
+FRONTEND_ORIGIN=
+```
+
+## Example local configuration
+
+```bash .env
+PORT=8080
+APP_ENV=development
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=payments_db
+DB_USERNAME=postgres
+DB_PASSWORD=supersecret
+DB_SCHEMA=public
+DB_SSLMODE=disable
+FRONTEND_ORIGIN=http://localhost:5173
+```

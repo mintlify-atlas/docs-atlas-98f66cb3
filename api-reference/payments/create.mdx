@@ -1,0 +1,117 @@
+---
+title: 'Create payment'
+description: 'Create a new payment record.'
+api: 'POST https://go-dashboard.fly.dev/payments'
+---
+
+Creates a new payment record and returns the saved object, including its assigned ID and timestamps.
+
+## Request body
+
+<ParamField body="sender" type="string" required>
+  Name or identifier of the party sending the payment. Cannot be empty.
+</ParamField>
+
+<ParamField body="recipient" type="string" required>
+  Name or identifier of the party receiving the payment. Cannot be empty.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Payment amount. Must be greater than `0`.
+</ParamField>
+
+## Response
+
+### 200 — success
+
+<ResponseField name="id" type="number" required>
+  Unique numeric identifier assigned to the new payment.
+</ResponseField>
+
+<ResponseField name="sender" type="string" required>
+  Name or identifier of the party sending the payment.
+</ResponseField>
+
+<ResponseField name="recipient" type="string" required>
+  Name or identifier of the party receiving the payment.
+</ResponseField>
+
+<ResponseField name="amount" type="number" required>
+  Payment amount as a floating-point number.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp of the last update.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp of when the payment was created.
+</ResponseField>
+
+### 400 — validation error
+
+Returned for any of the following conditions:
+
+| Condition | Error message |
+| --------- | ------------- |
+| Malformed JSON body | `Request body doesn't follow schema` |
+| `sender` is empty | `sender can't be empty` |
+| `recipient` is empty | `recipient can't be empty` |
+| `amount` is zero or negative | `amount must be greater than 0` |
+
+```json
+{
+  "error": "sender can't be empty"
+}
+```
+
+### 500 — server error
+
+```json
+{
+  "error": "Failed to create payment"
+}
+```
+
+<RequestExample>
+
+```bash cURL
+curl --request POST \
+  --url https://go-dashboard.fly.dev/payments \
+  --header 'Accept: application/json' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "sender": "alice",
+    "recipient": "bob",
+    "amount": 49.99
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "id": 3,
+  "sender": "alice",
+  "recipient": "bob",
+  "amount": 49.99,
+  "updatedAt": "2026-03-15T12:00:00Z",
+  "createdAt": "2026-03-15T12:00:00Z"
+}
+```
+
+```json 400
+{
+  "error": "amount must be greater than 0"
+}
+```
+
+```json 500
+{
+  "error": "Failed to create payment"
+}
+```
+
+</ResponseExample>

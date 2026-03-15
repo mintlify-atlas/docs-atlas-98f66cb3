@@ -1,0 +1,68 @@
+---
+title: 'API reference'
+description: 'Overview of the Go Payment Dashboard REST API, including base URLs, content types, CORS policy, and error format.'
+---
+
+The Go Payment Dashboard exposes a JSON REST API for managing payments and checking service health. No authentication is required.
+
+## Base URLs
+
+| Environment | URL |
+| ----------- | --- |
+| Production  | `https://go-dashboard.fly.dev` |
+| Local       | `http://localhost:8080` |
+
+## Content type
+
+All requests that include a body must set the `Content-Type` header to `application/json`.
+
+```http
+Content-Type: application/json
+```
+
+## Authentication
+
+This API does not require authentication. No API keys, tokens, or credentials are needed.
+
+## CORS
+
+The API is configured with the following CORS policy:
+
+| Setting | Value |
+| ------- | ----- |
+| Allowed origins | Configured via the `FRONTEND_ORIGIN` environment variable |
+| Allowed methods | `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH` |
+| Allowed headers | `Accept`, `Authorization`, `Content-Type` |
+| Credentials | Allowed |
+| Max age | 300 seconds |
+
+## Error format
+
+All error responses return a JSON object with a single `error` field:
+
+```json
+{
+  "error": "descriptive error message"
+}
+```
+
+## Endpoints
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET` | `/payments` | List all payments |
+| `POST` | `/payments` | Create a new payment |
+| `GET` | `/payments/{id}` | Get a payment by ID |
+| `GET` | `/health` | Application health check |
+| `GET` | `/health/db` | Database health check |
+
+## Endpoint groups
+
+<Columns cols={2}>
+  <Card title="Payments" icon="credit-card" href="/api-reference/payments/list">
+    Create and retrieve payment records.
+  </Card>
+  <Card title="Health" icon="heart-pulse" href="/api-reference/health/app">
+    Check application and database health status.
+  </Card>
+</Columns>
